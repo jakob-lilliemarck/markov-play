@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Prediction lab</title>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chart.js@3.7"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.1"></script>
+    <script>
+        const values = JSON.parse('<%- JSON.stringify(values) %>');
+
+        const thres = JSON.parse('<%- JSON.stringify(thres) %>');
+
+        const labels = values.map((_, i) => i)
+
+        const dataset = (data, color, label) => ({
+            label,
+            data,
+            fill: false,
+            borderColor: color,
+            tension: 0,
+            pointBorderWidth: 0,
+            pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+            borderWidth: .75,
+            hitRadius: 20
+        })
+
+        const stddev = (factors) => factors
+            .reduceRight((a, x) => [...a, -x], factors)
+            .map((factor) => ({
+                label: `Stddev:${factor}`,
+                data: values.map(({ price, summary }) => price + summary.stddev * factor),
+                fill: false,
+                borderColor: 'red',
+                tension: 0,
+                pointBorderWidth: 0,
+                pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+                borderWidth: .25,
+                hitRadius: 20
+            })
+            )
+
+
+        const data = {
+            labels: labels,
+            datasets: [
+                dataset(values.map(({ price }) => price), "green", "Price"),
+                dataset(values.map(({ price, trendChange }) => price + trendChange), "blue", "Accumulated change"),
+                dataset(values.map(({ summary }) => summary.mean), "black", "Mean"),
+                ...stddev(thres),
+            ]
+        };
+
+        const config = {
+            type: 'line',
+            data: data,
+            options: {
+                animation: {
+                    duration: 0
+                },
+                plugins: {
+                    tooltip: {
+                        mode: "index",
+                        position: "average",
+                        callbacks: {
+                            title(context, ...rest) {
+                                const i = context[0].dataIndex
+                                return i ? values[i].state : "Unknown"
+                            },
+                            label(context) {
+                                const v = context.dataset.data[context.dataIndex];
+                                return `${context.dataset.label}: ${v.toFixed(2)}`
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const ctx = document.getElementById('timeseries').getContext('2d');
+            new Chart(ctx, config);
+        });
+    </script>
+
+    <script>
+        const capitalData = {
+            labels: labels,
+            datasets: [
+                dataset(values.map(({ capital }) => capital), "red", "Capital")
+            ]
+        };
+
+        const capitalConfig = {
+            type: 'line',
+            data: capitalData,
+            options: {
+                animation: {
+                    duration: 0
+                },
+                plugins: {
+                    tooltip: {
+                        mode: "index",
+                        position: "average",
+                        callbacks: {
+                            title(context, ...rest) {
+                                const i = context[0].dataIndex
+                                return i ? values[i].state : "Unknown"
+                            },
+                            label(context) {
+                                const v = (context.dataset.data[context.dataIndex] / context.dataset.data[0]) * 100 - 100;
+                                return `Change: ${v.toFixed(2)}%`
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const ctx = document.getElementById('capital').getContext('2d');
+            new Chart(ctx, capitalConfig);
+        });
+    </script>
+
+    <script>
+        const tmxValues = JSON.parse('<%- JSON.stringify(tmxValues) %>');
+        const tmxLabels = JSON.parse('<%- JSON.stringify(tmxLabels) %>');
+        const tmxData = {
+            datasets: [{
+                label: 'My Matrix',
+                data: tmxValues,
+                backgroundColor(context) {
+                    const value = context.dataset.data[context.dataIndex].v;
+                    const alpha = value;
+                    return `rgba(0, 153, 51, ${alpha})`
+                },
+                borderColor(context) {
+                    const value = context.dataset.data[context.dataIndex].v;
+                    const alpha = value;
+                    return `rgba(0, 153, 51, ${alpha})`
+                },
+                borderWidth: 1,
+                width: ({ chart }) => (chart.chartArea || {}).width / tmxLabels.length - 1,
+                height: ({ chart }) => (chart.chartArea || {}).height / tmxLabels.length - 1
+            }]
+        };
+
+        const tmxConfig = {
+            type: 'matrix',
+            data: tmxData,
+            options: {
+                animation: {
+                    duration: 0
+                },
+                plugins: {
+                    legend: false,
+                    tooltip: {
+                        callbacks: {
+                            title() {
+                                return '';
+                            },
+                            label(context) {
+                                const v = context.dataset.data[context.dataIndex];
+                                return [`From: ${v.y}`, `to: ${v.x}`, `probability: ${(v.v * 100).toFixed(2)}%%`];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'category',
+                        labels: tmxLabels,
+                        ticks: {
+                            display: true
+                        },
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        type: 'category',
+                        labels: tmxLabels,
+                        offset: true,
+                        ticks: {
+                            display: true
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const ctx = document.getElementById('transition').getContext('2d');
+            new Chart(ctx, tmxConfig);
+        });
+    </script>
+    <script>
+        const cmxValues = JSON.parse('<%- JSON.stringify(cmxValues) %>');
+        const cmxLabels = JSON.parse('<%- JSON.stringify(cmxLabels) %>');
+        const cmxMax = Math.max(...cmxValues.flatMap(({ v }) => v))
+
+        const cmxData = {
+            datasets: [{
+                label: 'My Matrix',
+                data: cmxValues,
+                backgroundColor(context) {
+                    const value = context.dataset.data[context.dataIndex].v;
+                    const alpha = value / cmxMax;
+                    return `rgba(255, 50, 50, ${alpha})`
+                },
+                borderColor(context) {
+                    const value = context.dataset.data[context.dataIndex].v;
+                    const alpha = value / cmxMax;
+                    return `rgba(255, 50, 50, ${alpha})`
+                },
+                borderWidth: 1,
+                width: ({ chart }) => (chart.chartArea || {}).width / cmxLabels.length - 1,
+                height: ({ chart }) => (chart.chartArea || {}).height / cmxLabels.length - 1
+            }]
+        };
+
+        const cmxConfig = {
+            type: 'matrix',
+            data: cmxData,
+            options: {
+                animation: {
+                    duration: 0
+                },
+                plugins: {
+                    legend: false,
+                    tooltip: {
+                        callbacks: {
+                            title() {
+                                return '';
+                            },
+                            label(context) {
+                                const v = context.dataset.data[context.dataIndex];
+                                return [`Actual: ${v.y}`, `Predicted: ${v.x}`, `count: ${v.v}`];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'category',
+                        labels: cmxLabels,
+                        ticks: {
+                            display: true
+                        },
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        type: 'category',
+                        labels: cmxLabels,
+                        offset: true,
+                        ticks: {
+                            display: true
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const ctx = document.getElementById('confusion').getContext('2d');
+            new Chart(ctx, cmxConfig);
+        });
+    </script>
+    <style>
+        html,
+        body {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            left: 0;
+            margin: 0;
+        }
+
+        main {
+            height: 100%;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+
+        canvas {
+            max-height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <canvas id="timeseries"></canvas>
+
+        <canvas id="capital"></canvas>
+
+        <canvas id="transition"></canvas>
+        <div>
+            <label>size: <%= tmxSize %></label>
+        </div>
+        <canvas id="confusion"></canvas>
+        <div>
+
+            <label>size: <%= cmxSize %></label>
+            <label>recall: <%= (perf.recall *
+                    100).toFixed(3) %>%
+            </label>
+            <label>precision: <%= (perf.precision *
+                    100).toFixed(3) %>%
+            </label>
+        </div>
+    </main>
+</body>
+
+</html>

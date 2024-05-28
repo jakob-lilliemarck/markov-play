@@ -1,83 +1,3 @@
-import { csvToRows } from './utils'
-import { toAnnotated, type Row, type Annotated } from './simple'
-import { transitionMatrix } from './simple'
-import { sign } from 'crypto'
-import { dir } from 'console'
-
-const SAMPLE_CSV = './sample_msft.csv'
-
-interface Account {
-    qty: number,
-    price: number, // the avg price of held positions
-    cash: number
-}
-
-const trade = (action: 'buy' | 'sell', price: number, qty: number, account: Account) => {
-    const value = price * qty
-    if (action === 'buy' && account.cash >= value) {
-        return {
-            qty: account.qty + qty,
-            price: (account.price * account.qty) + value / (account.qty + qty),
-            cash: account.cash - value
-        }
-    }
-    if (action === 'sell' && account.qty >= qty) {
-        return {
-            qty: account.qty - qty,
-            price: account.qty - qty === 0 ? 0 : account.price,
-            cash: account.cash + value
-        }
-    }
-    return account
-}
-
-const rows = csvToRows<Row>(SAMPLE_CSV)
-
-
-const signal = (group: number, thres = 4) => {
-    return transitionMatrix[group].reduce((a, e, i) => {
-        return i > thres
-            ? { ...a, upside: a.upside + e }
-            : i < thres
-                ? { ...a, downside: a.downside + e }
-                : { ...a, stagnant: a.stagnant + e }
-    }, { upside: 0, downside: 0, stagnant: 0 })
-}
-
-let account = {
-    qty: 0,
-    price: 0,
-    cash: 10000,
-}
-
-const getValue = (row: Annotated, account: Account) => {
-    return (parseFloat(row.close) * account.qty) + account.cash
-}
-
-const result = rows.reduceRight((a, row, i, arr) => {
-    i
-    const annotated = toAnnotated(row, a.at(a.length - 1)?.annotated)
-    if (annotated.group) {
-        const { upside, downside } = signal(annotated.group)
-        if (upside > downside) {
-            console.log('buy')
-            account = trade('buy', parseFloat(annotated.close), 1, account)
-            console.log(account)
-        }
-        if (downside > upside) {
-            console.log('sell')
-            account = trade('sell', parseFloat(annotated.close), 1, account)
-            console.log(account)
-        }
-        //const value = getValue(annotated, account)
-        //console.log(annotated.date, account, 'value ', value)
-    }
-    return [...a, { annotated, account, value: getValue(annotated, account) }]
-}, [] as Array<{ account: Account, annotated: Annotated, value: number }>)
-
-
-/// ---
-
 type Direction = 'buy' | 'sell'
 
 class Order {
@@ -172,23 +92,17 @@ class Portfolio {
     }
 }
 
-export type Strategy<T extends Row> = {
+export type Strategy<T> = {
     evaluate(event: T): Order | null
 }
 
-class Simuation<T extends Row> {
+class Simuation<T> {
     portfolio: Portfolio
     events: T[]
 
     constructor(cash: number, events: T[]) {
         this.portfolio = new Portfolio(cash)
-        this.events = events.toSorted((a, b) => a.date.localeCompare(b.date)) // sort ascending order, latest date last
-    }
-
-    get perfBuyHold() {
-        const first = this.events[0]
-        const last = this.events[this.events.length - 1]
-        return parseFloat(first.close) / parseFloat(last.close)
+        this.events = events
     }
 
     calculate(strategy: Strategy<T>) {

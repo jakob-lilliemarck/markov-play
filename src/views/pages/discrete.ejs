@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Prediction lab</title>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chart.js@3.7"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.1"></script>
+    <script>
+        const values = JSON.parse('<%- JSON.stringify(values) %>');
+        const thres = JSON.parse('<%- JSON.stringify(thres) %>');
+        const labels = values.map((_, i) => i)
+
+        const dataset = (data, color) => ({
+            label: 'Price',
+            data,
+            fill: false,
+            borderColor: color,
+            tension: 0,
+            pointBorderWidth: 0,
+            pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+            borderWidth: .75,
+            hitRadius: 20
+        })
+
+        const stddev = (factors) => factors
+            .reduceRight((a, x) => [...a, -x], factors)
+            .map((factor) => ({
+                label: `Stddev:${factor}`,
+                data: values.map(({ price, stddev }) => price + stddev * factor),
+                fill: false,
+                borderColor: 'red',
+                tension: 0,
+                pointBorderWidth: 0,
+                pointBackgroundColor: 'rgba(0, 0, 0, 0)',
+                borderWidth: .25,
+                hitRadius: 20
+            })
+            )
+
+        const data = {
+            labels: labels,
+            datasets: [
+                dataset(values.map(({ price }) => price), "green"),
+                dataset(values.map(({ price, change }) => price + change), "blue"),
+                ...stddev(thres),
+            ]
+        };
+
+        const config = {
+            type: 'line',
+            data: data,
+            options: {
+                animation: {
+                    duration: 0
+                },
+                plugins: {
+                    tooltip: {
+                        mode: "index",
+                        position: "average",
+                        callbacks: {
+                            title(context, ...rest) {
+                                const i = context[0].dataIndex
+                                return i ? values[i].discrete : "Unknown"
+                            },
+                            label(context) {
+                                const v = context.dataset.data[context.dataIndex];
+                                return `${context.dataset.label}: ${v.toFixed(2)}`
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const ctx = document.getElementById('transitions').getContext('2d');
+            new Chart(ctx, config);
+        });
+    </script>
+    <style>
+        html,
+        body {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            left: 0;
+            margin: 0;
+        }
+
+        main {
+            height: 100%;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+
+        canvas {
+            max-height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <canvas id="transitions"></canvas>
+    </main>
+</body>
+
+</html>

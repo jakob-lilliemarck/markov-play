@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
+    "start": "ts-node src/server.ts",
     "bench": "tsx src/bench.ts",
     "simple": "tsx src/simple.ts",
     "agg": "tsx src/utils/aggregate_history.ts",
@@ -13,9 +14,19 @@
   "license": "ISC",
   "devDependencies": {
     "@jest/globals": "^29.7.0",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.12",
     "@types/node": "^20.12.12",
+    "@types/numeric": "^1.2.6",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2",
-    "tsx": "^4.10.4"
+    "ts-node": "^10.9.2",
+    "tsx": "^4.10.4",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "ml-matrix": "^6.11.0"
   }
 }

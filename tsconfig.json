@@ -1,8 +1,9 @@
 {
     "compilerOptions": {
-        "target": "es6",
-        "module": "ESNext",
+        "target": "esnext",
+        "module": "commonjs",
         "outDir": "./dist",
+        "baseUrl": "./src",
         "rootDir": "./src",
         "declaration": true,
         "declarationMap": true,
@@ -15,6 +16,7 @@
         "esModuleInterop": true,
         "moduleResolution": "node",
         "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true,
         "lib": [
             "ESNext",
             "ESNext.Array"
@@ -28,6 +30,5 @@
     ],
     "exclude": [
         "node_modules",
-        "**/*.test.ts"
     ]
 }

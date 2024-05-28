@@ -5,22 +5,22 @@ import { sma } from './sma'
 
 describe('sma', () => {
     test('test', async () => {
-        const composed = new Composed<{ close: string }, { close: string }>()
+        const composed = new Composed<{ close: number }, { close: number }>()
             .append(sma(2, 'sma2'))
             .append(sma(4, 'sma4'))
             .append(sma(8, 'sma8'))
 
         const result = composed.eval([
-            { close: "100" },
-            { close: "101" },
-            { close: "102" },
-            { close: "103" },
-            { close: "104" },
-            { close: "105" },
-            { close: "106" },
-            { close: "107" },
-            { close: "108" },
-            { close: "109" }
+            { close: 100 },
+            { close: 101 },
+            { close: 102 },
+            { close: 103 },
+            { close: 104 },
+            { close: 105 },
+            { close: 106 },
+            { close: 107 },
+            { close: 108 },
+            { close: 109 }
         ])
 
         expect(result[0].sma2).toBe(undefined)

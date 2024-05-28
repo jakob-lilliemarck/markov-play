@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Prediction lab</title>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chart.js@3.7"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.1"></script>
+    <script>
+        const max = "<%= max %>";
+        const values = JSON.parse('<%- JSON.stringify(values) %>');
+        const labels = JSON.parse('<%- JSON.stringify(labels) %>');
+
+        const data = {
+            datasets: [{
+                label: 'My Matrix',
+                data: values,
+                backgroundColor(context) {
+                    const value = context.dataset.data[context.dataIndex].v;
+                    const alpha = value / max;
+                    return `rgba(0, 153, 51, ${alpha})`
+                },
+                borderColor(context) {
+                    const value = context.dataset.data[context.dataIndex].v;
+                    const alpha = value / max
+                    return `rgba(0, 153, 51, ${alpha})`
+                },
+                borderWidth: 1,
+                width: ({ chart }) => (chart.chartArea || {}).width / labels.length - 1,
+                height: ({ chart }) => (chart.chartArea || {}).height / labels.length - 1
+            }]
+        };
+
+        const config = {
+            type: 'matrix',
+            data: data,
+            options: {
+                animation: {
+                    duration: 0
+                },
+                plugins: {
+                    legend: false,
+                    tooltip: {
+                        callbacks: {
+                            title() {
+                                return '';
+                            },
+                            label(context) {
+                                const v = context.dataset.data[context.dataIndex];
+                                return [`From: ${v.y}`, `to: ${v.x}`, `probability: ${(v.v * 100).toFixed(2)}%%`];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'category',
+                        labels,
+                        ticks: {
+                            display: true
+                        },
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        type: 'category',
+                        labels,
+                        offset: true,
+                        ticks: {
+                            display: true
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const ctx = document.getElementById('transitions').getContext('2d');
+            new Chart(ctx, config);
+        });
+    </script>
+    <style>
+        html,
+        body {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            left: 0;
+            margin: 0;
+        }
+
+        main {
+            height: 100%;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+
+        canvas {
+            max-height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <canvas id="transitions"></canvas>
+    </main>
+</body>
+
+</html>

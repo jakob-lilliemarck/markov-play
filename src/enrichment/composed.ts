@@ -1,4 +1,10 @@
-import { Callback, Row } from './model'
+import { Row } from 'types/financial'
+
+export type Callback<T extends Row, U extends T> = (
+    e: T,
+    i: number,
+    arr: Array<T>
+) => U;
 
 export class Composed<T extends Row, U extends T> {
     fns: Array<Callback<T, U>>;
